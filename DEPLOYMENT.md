@@ -3,6 +3,7 @@
 ## Local Development
 
 ### Prerequisites
+
 - Node.js 18+
 - Docker and Docker Compose
 - MongoDB 5+
@@ -139,41 +140,41 @@ spec:
         app: doc-gen-api
     spec:
       containers:
-      - name: api
-        image: <registry>/doc-gen-api:latest
-        ports:
-        - containerPort: 3000
-        - containerPort: 9090
-        env:
-        - name: MONGODB_URI
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: mongodb-uri
-        - name: REDIS_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: redis-url
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: api
+          image: <registry>/doc-gen-api:latest
+          ports:
+            - containerPort: 3000
+            - containerPort: 9090
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-uri
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-url
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -183,13 +184,14 @@ spec:
   selector:
     app: doc-gen-api
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
   type: LoadBalancer
 ```
 
 Deploy:
+
 ```bash
 kubectl apply -f deployment.yaml
 ```
@@ -197,10 +199,12 @@ kubectl apply -f deployment.yaml
 ## Environment Variables
 
 ### Required
+
 - `MONGODB_URI` - MongoDB connection string
 - `REDIS_URL` - Redis connection string
 
 ### Optional
+
 - `NODE_ENV` - Environment (development/production)
 - `PORT` - API port (default: 3000)
 - `LOG_LEVEL` - Logging level (default: info)
@@ -210,11 +214,13 @@ kubectl apply -f deployment.yaml
 ## Health Checks
 
 ### Liveness Probe
+
 ```
 GET /health
 ```
 
 ### Readiness Probe
+
 ```
 GET /health/detailed
 ```
@@ -222,6 +228,7 @@ GET /health/detailed
 ## Monitoring
 
 ### Prometheus Metrics
+
 ```
 GET /metrics
 ```
@@ -289,47 +296,50 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run linter
-      run: npm run lint
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: Build
-      run: npm run build
-    
-    - name: Build Docker image
-      run: docker build -f .docker/Dockerfile.prod -t doc-gen-api:latest .
-    
-    - name: Deploy to Render
-      run: |
-        curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Build Docker image
+        run: docker build -f .docker/Dockerfile.prod -t doc-gen-api:latest .
+
+      - name: Deploy to Render
+        run: |
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
 ```
 
 ## Scaling
 
 ### Horizontal Scaling
+
 1. Deploy multiple API instances
 2. Use load balancer (nginx, HAProxy)
 3. Share MongoDB and Redis instances
 
 ### Vertical Scaling
+
 1. Increase `BULL_CONCURRENCY` for more parallel processing
 2. Increase Node.js heap size: `NODE_OPTIONS=--max-old-space-size=4096`
 
 ### Queue Optimization
+
 ```env
 BULL_CONCURRENCY=20
 PDF_GENERATION_TIMEOUT=10000
@@ -338,12 +348,14 @@ PDF_GENERATION_TIMEOUT=10000
 ## Troubleshooting
 
 ### Out of Memory
+
 ```bash
 # Increase Node memory
 NODE_OPTIONS=--max-old-space-size=4096 npm start
 ```
 
 ### Slow Document Generation
+
 ```bash
 # Check queue size
 curl http://localhost:9090/metrics | grep queue_size
@@ -353,6 +365,7 @@ BULL_CONCURRENCY=5 npm start
 ```
 
 ### MongoDB Connection Issues
+
 ```bash
 # Check connection string
 echo $MONGODB_URI
@@ -362,6 +375,7 @@ mongosh $MONGODB_URI
 ```
 
 ### Redis Connection Issues
+
 ```bash
 # Check connection
 redis-cli -u $REDIS_URL ping
