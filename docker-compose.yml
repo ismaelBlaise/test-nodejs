@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: doc-gen-mongodb
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: document-generation
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: doc-gen-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    container_name: doc-gen-api
+    ports:
+      - '3000:3000'
+      - '9090:9090'
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/document-generation
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+    command: npm run dev
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  default:
+    name: doc-generation-network
