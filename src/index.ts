@@ -10,6 +10,7 @@ import QueueService from './services/QueueService';
 import { requestLogger, errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { apiLimiter, batchCreateLimiter } from './middleware/rateLimiter';
 import routes from './api/routes';
+import { setupSwagger } from './api/swagger-setup';
 
 // Initialize Bull job processor
 import './workers/pdf-generator';
@@ -44,6 +45,9 @@ async function initializeApp(): Promise<void> {
     // Rate limiting
     app.use('/api/', apiLimiter);
     app.use('/api/documents/batch', batchCreateLimiter);
+
+    // Swagger documentation
+    setupSwagger(app);
 
     // API routes
     app.use('/api', routes);
