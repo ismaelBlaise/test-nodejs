@@ -34,7 +34,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: .docker/Dockerfile
+      dockerfile: ./Dockerfile
     container_name: doc-gen-api
     ports:
       - '3000:3000'
