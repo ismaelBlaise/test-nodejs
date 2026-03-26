@@ -3,13 +3,13 @@ version: '3.8'
 services:
   mongodb:
     image: mongo:7.0
-    container_name: doc-gen-mongodb
+    container_name: doc-gen-mongodb-dev
     ports:
       - '27017:27017'
     environment:
       MONGO_INITDB_DATABASE: document-generation
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data_dev:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test
@@ -19,11 +19,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: doc-gen-redis
+    container_name: doc-gen-redis-dev
     ports:
       - '6379:6379'
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -34,28 +34,35 @@ services:
   api:
     build:
       context: .
-      dockerfile: ./Dockerfile
-    container_name: doc-gen-api
+      dockerfile: ./Dockerfile.dev
+    container_name: doc-gen-api-dev
     ports:
       - '3000:3000'
       - '9090:9090'
+      - '5555:5555'
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       MONGODB_URI: mongodb://mongodb:27017/document-generation
       REDIS_URL: redis://redis:6379
-      LOG_LEVEL: warn
+      LOG_LEVEL: debug
       LOG_FORMAT: json
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./node_modules:/app/node_modules
+      - ./.eslintrc.json:/app/.eslintrc.json
+      - ./tsconfig.json:/app/tsconfig.json
     restart: unless-stopped
 
 volumes:
-  mongodb_data:
-  redis_data:
+  mongodb_data_dev:
+  redis_data_dev:
 
 networks:
   default:
-    name: doc-generation-network
+    name: doc-generation-network-dev
