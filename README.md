@@ -542,6 +542,3 @@ curl http://localhost:3000/health/detailed
 MIT
 
 ---
-
-**Last Updated**: September 2024  
-**Version**: 1.0.0
